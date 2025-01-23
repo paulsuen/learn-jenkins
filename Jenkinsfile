@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        dockerfile {
-            filename 'Dockerfile'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
     
     environment {
         DOCKER_IMAGE = 'flask-app'
@@ -12,21 +7,33 @@ pipeline {
     }
     
     stages {
+        stage('Setup Python') {
+            steps {
+                sh 'curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py'
+                sh 'python3 get-pip.py'
+                sh 'pip3 install pytest'
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
         
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip3 install -r requirements.txt'
+            }
+        }
+        
         stage('Test') {
             steps {
-                sh 'pip install -r requirements.txt'
-                sh 'python -m pytest tests/'
+                sh 'python3 -m pytest tests/'
             }
         }
         
         stage('Build Docker Image') {
-            agent any
             steps {
                 script {
                     sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
@@ -35,7 +42,6 @@ pipeline {
         }
         
         stage('Deploy') {
-            agent any
             steps {
                 script {
                     sh 'docker-compose up -d --build web'
