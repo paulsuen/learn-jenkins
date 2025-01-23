@@ -1,7 +1,7 @@
 pipeline {
     agent {
-        docker {
-            image 'python:3.9'
+        dockerfile {
+            filename 'Dockerfile'
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
@@ -26,6 +26,7 @@ pipeline {
         }
         
         stage('Build Docker Image') {
+            agent any
             steps {
                 script {
                     sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
@@ -34,6 +35,7 @@ pipeline {
         }
         
         stage('Deploy') {
+            agent any
             steps {
                 script {
                     sh 'docker-compose up -d --build web'
